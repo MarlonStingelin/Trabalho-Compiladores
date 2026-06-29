@@ -57,7 +57,8 @@ analisaPrograma (Prog funcoes corpos varsGlobais blocoMain) = do
 
     corposAnalisados <- mapM (analisaCorpo tblGlobal) corpos
 
-    blocoMainAnalisado <- analisaBloco tblGlobal [] TVoid blocoMain
+    tblMain <- buildTabelaLocal varsGlobais
+    blocoMainAnalisado <- analisaBloco tblGlobal tblMain TVoid blocoMain
 
     return (Prog funcoes corposAnalisados varsGlobais blocoMainAnalisado)
 
@@ -179,6 +180,7 @@ analisaBinArit tg tl cons e1 e2 op = do
                       ++ "': " ++ show t1 ++ " e " ++ show t2)
             return (cons e1A e2A, TInt)
 
+--expressões relacionais
 analisaExprR :: TabelaGlobal -> TabelaLocal -> ExprR -> Result ExprR
 analisaExprR tg tl exprR = case exprR of
     Req e1 e2  -> analisaBinRel tg tl Req  e1 e2 "=="
@@ -217,6 +219,7 @@ analisaBinRel tg tl cons e1 e2 op = do
                       ++ "': " ++ show t1 ++ " e " ++ show t2)
             return (cons e1A e2A)
 
+--expressões lógicas
 analisaExprL :: TabelaGlobal -> TabelaLocal -> ExprL -> Result ExprL
 analisaExprL tg tl exprL = case exprL of
     And l1 l2 -> do
@@ -234,6 +237,7 @@ analisaExprL tg tl exprL = case exprL of
         rA <- analisaExprR tg tl r
         return (Rel rA)
 
+--chamadas de função
 analisaChamada :: TabelaGlobal -> TabelaLocal -> Id -> [Expr] -> Result [Expr]
 analisaChamada tg tl nome args =
     case lookup nome tg of
@@ -259,6 +263,7 @@ analisaChamada tg tl nome args =
                            ++ ", recebido " ++ show ta ++ ")"))
                      triplas
 
+--tipos atribuição
 coerceAtrib :: Tipo -> Tipo -> Expr -> String -> Result Expr
 coerceAtrib dest src expr ctx = case (dest, src) of
     (TInt,    TInt)    -> return expr
