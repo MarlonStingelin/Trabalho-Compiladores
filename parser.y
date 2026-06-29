@@ -68,21 +68,24 @@ import AST
 
 Programa
     : ListaFuncoes BlocoPrincipal
-        { Prog [] $1 [] $2 }
+        { let { (vars, bloco) = $2; (fns, corps) = $1 }
+          in  Prog fns corps vars bloco }
     | BlocoPrincipal
-        { Prog [] [] [] $1 }
+        { let (vars, bloco) = $1 in Prog [] [] vars bloco }
 
 ListaFuncoes
     : ListaFuncoes Funcao
-        { $1 ++ [$2] }
+        { (fst $1 ++ [fst $2], snd $1 ++ [snd $2]) }
     | Funcao
-        { [$1] }
+        { ([fst $1], [snd $1]) }
 
 Funcao
     : TipoRet id '(' ParamFormais ')' BlocoPrincipal
-        { ($2, $4, $6) }
+        { let (vars, bloco) = $6
+          in  ($2 :->: ($4, $1), ($2, $4 ++ vars, bloco)) }
     | TipoRet id '(' ')' BlocoPrincipal
-        { ($2, [], $5) }
+        { let (vars, bloco) = $5
+          in  ($2 :->: ([], $1), ($2, vars, bloco)) }
 
 TipoRet
     : Tipo
@@ -110,9 +113,9 @@ ParamFormal
 
 BlocoPrincipal
     : '{' Declaracoes ListaCmd '}'
-        { $3 }
+        { ($2, $3) }
     | '{' ListaCmd '}'
-        { $2 }
+        { ([], $2) }
 
 Declaracoes
     : Declaracoes Declaracao
@@ -263,5 +266,5 @@ ExpressaoAritmetica
 {
 parseError :: [Token] -> a
 parseError tokens =
-    error ("Erro sintático próximo aos tokens: " ++ show (take 5 tokens))
+    error ("Erro sint?tico pr?ximo aos tokens: " ++ show (take 5 tokens))
 }
